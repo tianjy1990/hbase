@@ -16,7 +16,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.hadoop.hbase.rest.client;
 
 import com.google.protobuf.Descriptors;
@@ -24,6 +23,7 @@ import com.google.protobuf.Message;
 import com.google.protobuf.Service;
 import com.google.protobuf.ServiceException;
 
+import java.nio.charset.StandardCharsets;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.Cell;
 import org.apache.hadoop.hbase.CellUtil;
@@ -42,6 +42,7 @@ import org.apache.hadoop.hbase.client.Durability;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.Increment;
 import org.apache.hadoop.hbase.client.Put;
+import org.apache.hadoop.hbase.client.RegionLocator;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.client.Row;
@@ -52,7 +53,6 @@ import org.apache.hadoop.hbase.client.TableDescriptor;
 import org.apache.hadoop.hbase.client.coprocessor.Batch;
 import org.apache.hadoop.hbase.client.coprocessor.Batch.Callback;
 import org.apache.hadoop.hbase.client.metrics.ScanMetrics;
-import org.apache.hadoop.hbase.filter.CompareFilter.CompareOp;
 import org.apache.hadoop.hbase.io.TimeRange;
 import org.apache.hadoop.hbase.ipc.CoprocessorRpcChannel;
 import org.apache.hadoop.hbase.rest.Constants;
@@ -717,13 +717,6 @@ public class RemoteHTable implements Table {
   @Override
   @Deprecated
   public boolean checkAndPut(byte[] row, byte[] family, byte[] qualifier,
-      CompareOp compareOp, byte[] value, Put put) throws IOException {
-    throw new IOException("checkAndPut for non-equal comparison not implemented");
-  }
-
-  @Override
-  @Deprecated
-  public boolean checkAndPut(byte[] row, byte[] family, byte[] qualifier,
                              CompareOperator compareOp, byte[] value, Put put) throws IOException {
     throw new IOException("checkAndPut for non-equal comparison not implemented");
   }
@@ -774,13 +767,6 @@ public class RemoteHTable implements Table {
   @Override
   @Deprecated
   public boolean checkAndDelete(byte[] row, byte[] family, byte[] qualifier,
-      CompareOp compareOp, byte[] value, Delete delete) throws IOException {
-    throw new IOException("checkAndDelete for non-equal comparison not implemented");
-  }
-
-  @Override
-  @Deprecated
-  public boolean checkAndDelete(byte[] row, byte[] family, byte[] qualifier,
                                 CompareOperator compareOp, byte[] value, Delete delete) throws IOException {
     throw new IOException("checkAndDelete for non-equal comparison not implemented");
   }
@@ -788,13 +774,6 @@ public class RemoteHTable implements Table {
   @Override
   public CheckAndMutateBuilder checkAndMutate(byte[] row, byte[] family) {
     return new CheckAndMutateBuilderImpl(row, family);
-  }
-
-  @Override
-  @Deprecated
-  public boolean checkAndMutate(byte[] row, byte[] family, byte[] qualifier,
-      CompareOp compareOp, byte[] value, RowMutations rm) throws IOException {
-    throw new UnsupportedOperationException("checkAndMutate not implemented");
   }
 
   @Override
@@ -953,7 +932,7 @@ public class RemoteHTable implements Table {
    */
   private static String toURLEncodedBytes(byte[] row) {
     try {
-      return URLEncoder.encode(new String(row, "UTF-8"), "UTF-8");
+      return URLEncoder.encode(new String(row, StandardCharsets.UTF_8), "UTF-8");
     } catch (UnsupportedEncodingException e) {
       throw new IllegalStateException("URLEncoder doesn't support UTF-8", e);
     }
@@ -1020,5 +999,10 @@ public class RemoteHTable implements Table {
     public boolean thenMutate(RowMutations mutation) throws IOException {
       throw new UnsupportedOperationException("thenMutate not implemented");
     }
+  }
+
+  @Override
+  public RegionLocator getRegionLocator() throws IOException {
+    throw new UnsupportedOperationException();
   }
 }

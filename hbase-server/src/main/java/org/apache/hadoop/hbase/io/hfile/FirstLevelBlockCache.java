@@ -1,5 +1,4 @@
 /**
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,40 +15,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.hadoop.hbase.io.hfile;
 
-package org.apache.hadoop.hbase.client;
-
-import org.apache.hadoop.hbase.HRegionInfo;
+import org.apache.hadoop.hbase.io.HeapSize;
 import org.apache.yetus.audience.InterfaceAudience;
 
 /**
- * @deprecated As of release 2.0.0, this will be removed in HBase 3.0.0.
+ * In-memory BlockCache that may be backed by secondary layer(s).
  */
-@InterfaceAudience.Public
-@Deprecated
-class UnmodifyableHRegionInfo extends HRegionInfo {
-  /*
-   * Creates an unmodifyable copy of an HRegionInfo
+@InterfaceAudience.Private
+public interface FirstLevelBlockCache extends ResizableBlockCache, HeapSize {
+
+  /**
+   * Whether the cache contains the block with specified cacheKey
    *
-   * @param info
+   * @param cacheKey cache key for the block
+   * @return true if it contains the block
    */
-  UnmodifyableHRegionInfo(HRegionInfo info) {
-    super(info);
-  }
+  boolean containsBlock(BlockCacheKey cacheKey);
 
   /**
-   * @param split set split status
+   * Specifies the secondary cache. An entry that is evicted from this cache due to a size
+   * constraint will be inserted into the victim cache.
+   *
+   * @param victimCache the second level cache
+   * @throws IllegalArgumentException if the victim cache had already been set
    */
-  @Override
-  public void setSplit(boolean split) {
-    throw new UnsupportedOperationException("HRegionInfo is read-only");
-  }
-
-  /**
-   * @param offLine set online - offline status
-   */
-  @Override
-  public void setOffline(boolean offLine) {
-    throw new UnsupportedOperationException("HRegionInfo is read-only");
-  }
+  void setVictimCache(BlockCache victimCache);
 }

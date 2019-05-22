@@ -193,6 +193,7 @@ import org.apache.hadoop.hbase.replication.master.ReplicationHFileCleaner;
 import org.apache.hadoop.hbase.replication.master.ReplicationLogCleaner;
 import org.apache.hadoop.hbase.replication.master.ReplicationPeerConfigUpgrader;
 import org.apache.hadoop.hbase.security.AccessDeniedException;
+import org.apache.hadoop.hbase.security.SecurityConstants;
 import org.apache.hadoop.hbase.security.UserProvider;
 import org.apache.hadoop.hbase.trace.TraceUtil;
 import org.apache.hadoop.hbase.util.Addressing;
@@ -693,8 +694,8 @@ public class HMaster extends HRegionServer implements MasterServices {
     try {
       super.login(user, host);
     } catch (IOException ie) {
-      user.login("hbase.master.keytab.file",
-        "hbase.master.kerberos.principal", host);
+      user.login(SecurityConstants.MASTER_KRB_KEYTAB_FILE,
+              SecurityConstants.MASTER_KRB_PRINCIPAL, host);
     }
   }
 
@@ -1006,7 +1007,7 @@ public class HMaster extends HRegionServer implements MasterServices {
     try {
       this.serverManager.loadLastFlushedSequenceIds();
     } catch (IOException e) {
-      LOG.debug("Failed to load last flushed sequence id of regions"
+      LOG.info("Failed to load last flushed sequence id of regions"
           + " from file system", e);
     }
     // Set ourselves as active Master now our claim has succeeded up in zk.
@@ -2954,6 +2955,7 @@ public class HMaster extends HRegionServer implements MasterServices {
     if (isAborted() || isStopped()) {
       return;
     }
+    setAbortRequested();
     if (cpHost != null) {
       // HBASE-4014: dump a list of loaded coprocessors.
       LOG.error(HBaseMarkers.FATAL, "Master server abort: loaded coprocessors are: " +
@@ -3388,6 +3390,25 @@ public class HMaster extends HRegionServer implements MasterServices {
       this.cpHost.postListNamespaceDescriptors(nsds);
     }
     return nsds;
+  }
+
+  /**
+   * List namespace names
+   * @return All namespace names
+   */
+  public List<String> listNamespaces() throws IOException {
+    checkInitialized();
+    List<String> namespaces = new ArrayList<>();
+    if (cpHost != null) {
+      cpHost.preListNamespaces(namespaces);
+    }
+    for (NamespaceDescriptor namespace : clusterSchemaService.getNamespaces()) {
+      namespaces.add(namespace.getName());
+    }
+    if (cpHost != null) {
+      cpHost.postListNamespaces(namespaces);
+    }
+    return namespaces;
   }
 
   @Override
